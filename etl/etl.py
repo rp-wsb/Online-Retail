@@ -12,13 +12,16 @@ def extract(path: Path) -> pd.DataFrame:
     print(f"Extrahiert: {len(df):,} Zeilen")
     return df
 
-#transfort
+#transform
 
 def transform(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna(subset=["InvoiceNo", "StockCode", "InvoiceDate"]).copy()
     df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"])
     df["CustomerID"] = df["CustomerID"].astype("Int64").astype("string")
     df["is_cancellation"] = df["InvoiceNo"].astype(str).str.startswith("C")
+    df = df[(df["UnitPrice"] > 0) | (df["is_cancellation"])]
+    df["StockCode"] = df["StockCode"].astype(str).str.strip().str.upper()
+
     df = df[(df["UnitPrice"] > 0) | (df["is_cancellation"])]
 
     unique_dates = pd.to_datetime(df["InvoiceDate"].dt.date.drop_duplicates().sort_values())
@@ -31,6 +34,11 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     dim_date["day"] = dim_date["full_date"].dt.day
     dim_date["weekday_name"] = dim_date["full_date"].dt.day_name()
     dim_date["is_weekend"] = dim_date["full_date"].dt.weekday >= 5
+
+    dim_date = dim_date[[
+        "date_key", "full_date", "year", "quarter", "month",
+        "month_name", "day", "weekday_name", "is_weekend",
+    ]]
 
     dim_product = (
         df[["StockCode", "Description"]]

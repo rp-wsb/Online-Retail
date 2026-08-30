@@ -22,7 +22,6 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
     df = df[(df["UnitPrice"] > 0) | (df["is_cancellation"])]
     df["StockCode"] = df["StockCode"].astype(str).str.strip().str.upper()
 
-    df = df[(df["UnitPrice"] > 0) | (df["is_cancellation"])]
 
     unique_dates = pd.to_datetime(df["InvoiceDate"].dt.date.drop_duplicates().sort_values())
     dim_date = pd.DataFrame({"full_date": unique_dates})
@@ -52,13 +51,19 @@ def transform(df: pd.DataFrame) -> pd.DataFrame:
         .rename(columns={"CustomerID": "customer_id", "Country": "country"})
     )
 
+    dim_customer = pd.concat([
+        dim_customer,
+        pd.DataFrame([{"customer_id": "UNKNOWN", "country": "Unknown"}]),
+    ], ignore_index=True)
+
     fact_sales = df.copy()
     fact_sales["date_key"] = fact_sales["InvoiceDate"].dt.strftime("%Y%m%d").astype(int)
     fact_sales["revenue"] = fact_sales["Quantity"] * fact_sales["UnitPrice"]
+    fact_sales["customer_id"] = fact_sales["CustomerID"].fillna("UNKNOWN").astype(str)
     fact_sales = fact_sales.rename(columns={
-        "InvoiceNo": "invoice_no", "StockCode": "stock_code",
-        "CustomerID": "customer_id", "Quantity": "quantity", "UnitPrice": "unit_price",
-    })[["invoice_no", "stock_code", "customer_id", "date_key",
+        "InvoiceNo": "invoice_no", "StockCode": "stock_code", 
+        "Quantity": "quantity", "UnitPrice": "unit_price", 
+    })[["invoice_no", "stock_code", "date_key", "customer_id",
         "quantity", "unit_price", "revenue", "is_cancellation"]]
 
     return {"dim_date": dim_date, "dim_product": dim_product,

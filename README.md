@@ -145,7 +145,7 @@ pip install -r etl/requirements.txt
 python etl/etl.py
 ```
 
-This produces `sql/warehouse.db`, ready to be connected to Power BI (or any SQL client)
+This produces `warehouse.db`, ready to be connected to Power BI (or any SQL client)
 for analysis.
 
 ## Possible Extensions
